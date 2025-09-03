@@ -93,7 +93,7 @@ streamlit run SankeyX_with_intent_dynamics.py
 ---
 
 ## 🪪 License
-MIT (add your preferred license here).
+MIT.
 
 ## 🙌 Contributing
 PRs welcome! Please open an issue for bugs/ideas and include a small CSV snippet to reproduce.
