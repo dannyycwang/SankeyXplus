@@ -4,16 +4,15 @@ Interactive Streamlit app to visualize clickstream sequences as a **Sankey diagr
 
 ![Architecture](sankeyx_architecture.png)
 
-```mermaid
 flowchart LR
-  A[CSV Input<br/>truncated_sequence, SHAP_*, y_pred, purchase,<br/>Intent_type (optional)]
-  B[Streamlit UI<br/>N sessions, steps, colors,<br/>intent settings, LLM model]
-  C[Preprocessing<br/>parse → align SHAP → truncate at first purchase]
-  D[Intent Engine<br/>prefix rules + hysteresis (K) + NA bridging]
-  E[Sankey Builder<br/>per-session nodes/links + stage headers]
-  F[GIF Generator<br/>matplotlib timeline animation]
-  G[LLM via Ollama<br/>compact summary → JSON insights]
-  H[Output<br/>Plotly Sankey + GIF + AI tabs]
+  A["CSV Input\ntruncated_sequence, SHAP_*, y_pred, purchase\nIntent_type (optional)"]
+  B["Streamlit UI\nN sessions, steps, colors,\nintent settings, LLM model"]
+  C["Preprocessing\nparse → align SHAP → truncate at first purchase"]
+  D["Intent Engine\nprefix rules + hysteresis (K) + NA bridging"]
+  E["Sankey Builder\nper-session nodes/links + stage headers"]
+  F["GIF Generator\nmatplotlib timeline animation"]
+  G["LLM via Ollama\ncompact summary → JSON insights"]
+  H["Output\nPlotly Sankey + GIF + AI tabs"]
 
   A --> C
   B --> C
@@ -23,7 +22,7 @@ flowchart LR
   E --> H
   D --> F --> H
   C --> G --> H
-```
+
 
 ---
 
