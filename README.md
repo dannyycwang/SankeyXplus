@@ -4,7 +4,7 @@ Interactive Streamlit app to visualize clickstream sequences as a **Sankey diagr
 
 ![Architecture](sankeyx_architecture.png)
 
-```mermaid
+``` mermaid
 flowchart LR
   A[CSV Input<br/>truncated_sequence, SHAP_*, y_pred, purchase,<br/>Intent_type (optional)]
   B[Streamlit UI<br/>N sessions, steps, colors,<br/>intent settings, LLM model]
