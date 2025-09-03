@@ -1,241 +1,124 @@
-# SankeyX — Intent Dynamics (Streamlit)
+# SankeyX with Intent Dynamics
 
-An interactive Streamlit app to visualize clickstream sessions as a **Sankey** flow with **dynamic customer intent timelines**, SHAP-weighted edges, prediction outcomes, and utility impact.
+Interactive Streamlit app to visualize clickstream sequences as a **Sankey diagram** with **dynamic customer intent timelines**, **SHAP‑weighted flows**, outcome → **utility**, and optional **AI explanations** via a local Ollama LLM.
 
-> This repo is prepped for a **public GitHub page** via `docs/` and includes deployment instructions (Streamlit Community, Hugging Face Spaces, or local).
+![Architecture](sankeyx_architecture.png)
+
+```mermaid
+flowchart LR
+  A[CSV Input<br/>truncated_sequence, SHAP_*, y_pred, purchase,<br/>Intent_type (optional)]
+  B[Streamlit UI<br/>N sessions, steps, colors,<br/>intent settings, LLM model]
+  C[Preprocessing<br/>parse → align SHAP → truncate at first purchase]
+  D[Intent Engine<br/>prefix rules + hysteresis (K) + NA bridging]
+  E[Sankey Builder<br/>per-session nodes/links + stage headers]
+  F[GIF Generator<br/>matplotlib timeline animation]
+  G[LLM via Ollama<br/>compact summary → JSON insights]
+  H[Output<br/>Plotly Sankey + GIF + AI tabs]
+
+  A --> C
+  B --> C
+  C --> D
+  C --> E
+  D --> E
+  E --> H
+  D --> F --> H
+  C --> G --> H
+```
 
 ---
 
 ## ✨ Features
+- **CSV → Interactive Sankey**: maps each session's steps into a left‑to‑right flow with stage headers (Intent → Click 1..k → Prediction → Utility).
+- **Dynamic Intent Engine**: rule‑based, prefix‑evaluated intents with optional hysteresis (K) and NA bridging to stabilize state switches.
+- **Per‑Session Mode**: click a specific flow to render a **GIF timeline** of intents (matplotlib animation).
+- **SHAP‑Weighted Links**: positive/negative step contributions change link width (and color in the UI).
+- **LLM Insights (optional)**: send a compact summary to **Ollama** to get JSON insights, strengths/weaknesses, patterns, and tips.
+- **Rich Sidebar Controls**: session count, max steps, ordering (first/last), event colors, intent strategy (late vs. hysteresis), etc.
 
-- **SankeyX**: sessions rendered left→right as steps (intent → clicks → prediction → utility).
-- **Dynamic Intent**: per-session intent timeline with **late** or **hysteresis** (inertia K) strategy.
-- **Click-to-GIF**: click a session flow to auto-generate a GIF of its intent timeline.
-- **SHAP integration**: per-step edge weight shows positive/negative contributions.
-- **Utility accounting**: TP/TN/FP/FN mapped to configurable utility.
-- **LLM summary (optional)**: local **Ollama** prompt for compact insights.
-
-> App entry: `SankeyX_with_intent_dynamics.py`
+> This README is generated based on the code you provided. Paths, columns, and behaviors reflect the current implementation.
 
 ---
 
-## 📦 Quickstart (Local)
+## 📦 Input Data Schema (CSV)
+Minimal columns:
+- `truncated_sequence` — list‑like string of ints (e.g., `"[1,1,2,3,5]"`).
+- `SHAP_1 ... SHAP_N` — per‑step SHAP values (N should cover the longest shown sequence).
+- `y_pred` — model predicted label (0/1).
+- `purchase` — ground truth label (0/1).
+- `Intent_type` *(optional)* — static/classic intent label used for filtering.
 
+> The app will **parse** `truncated_sequence`, **align** SHAP to visible steps, and **truncate at the first purchase (5)** if present.
+
+---
+
+## 🚀 Quickstart
+
+### 1) Install
 ```bash
-# 1) Create environment (recommended)
-python -m venv .venv
-source .venv/bin/activate    # (Windows: .venv\Scripts\activate)
+pip install streamlit plotly pandas numpy matplotlib requests
+# (optional) for click capture:
+pip install streamlit-plotly-events
+```
 
-# 2) Install deps
-pip install -r requirements.txt
-
-# 3) (Optional) start local Ollama for LLM
-#    https://ollama.ai/download
-#    then pull a model, e.g.:
-#    ollama run mistral
-
-# 4) Run
+### 2) Run
+```bash
 streamlit run SankeyX_with_intent_dynamics.py
 ```
 
-Then open the local URL printed by Streamlit and **upload a CSV** (see schema below).
+### 3) Upload Data
+- Use the **sidebar** to upload your CSV.
+- Tune: **N Sessions**, **Max Steps**, **Order (first/last)**, **event colors**, and **Intent Dynamics**.
+
+### 4) Optional: Enable Ollama (local LLM)
+- Install Ollama and pull a model:
+  ```bash
+  ollama run mistral      # or llama3.2, qwen2.5, etc.
+  ```
+- In the sidebar, set **Model** and toggle **Auto‑generate explanation** or click the button.
 
 ---
 
-## 🔢 CSV Schema
-
-Minimum required columns:
-
-- `truncated_sequence` — list-like string of ints, e.g. `"[1,1,2,3,5]"` (0s are ignored)
-- `purchase` — ground truth label (0/1)
-- `y_pred` — predicted label (0/1)
-
-Optional but recommended:
-
-- `session_id_hash` — unique id per session
-- `Intent_type` — static intent (fallback or comparison)
-- `SHAP_1, SHAP_2, ...` — per-step SHAP values (aligned to earliest steps)
-- Any other metadata you want to explore
-
-A tiny example is provided at `sample_data/sample.csv`.
+## ⚙️ Intent Dynamics (Rule Summary)
+- Evaluate **prefixes** of the sequence at each step.
+- Choose the currently “true” intent by stage ordering (**late**) or require **K consecutive confirmations** (**hysteresis**).
+- **Bridge NA**: when no rule fires, optionally carry forward the last valid intent to avoid gaps.
+- The **left column** can show either the **last dynamic intent** (default) or the **static intent** from the CSV.
 
 ---
 
-## 🧠 Dynamic Intent — Notes
+## 🖼️ Outputs
+- **SankeyX** (Plotly): per‑session flows, stage headers, outcomes (**TP/TN/FP/FN**), and final **Utility**.
+- **On Click** (per‑session mode): a **GIF** of the dynamic intent timeline is generated and shown.
+- **AI Explanation**: a tabbed JSON‑to‑paragraph view with performance, patterns, SHAP interpretation, and actionable insights.
 
-- Strategies: **late** (greedy last true) and **hys** (late + inertia `K` consecutive confirmations).
-- **Bridge NA** option: carry the last known intent across NA segments for a smoother timeline.
-- The **leftmost column** can show either the **final dynamic intent** or the provided **static** intent.
-
----
-
-## 🤖 LLM (Ollama) — Optional
-
-The app can call a local LLM via **Ollama** (`http://localhost:11434`). In the sidebar, set:
-- **Model**: `mistral`, `llama3.2`, `qwen2.5`, etc.
-- **Temperature** and whether to auto-generate explanations.
-
-If Ollama is **not running**, the app will simply show a friendly error and continue.
+> GIFs are saved to your user directory with a unique filename.
 
 ---
 
-## 🌐 Deploy
-
-### Option A — Streamlit Community Cloud
-1. Push this repo to GitHub (public).
-2. Go to https://share.streamlit.io/
-3. Point to: `SankeyX_with_intent_dynamics.py`
-4. Add secrets or hardware as needed (LLM optional).
-
-### Option B — Hugging Face Spaces
-1. Create a **Streamlit** Space.
-2. Upload this repo.
-3. Set `app_file` to `SankeyX_with_intent_dynamics.py`.
-4. (Optional) Add Ollama on a separate machine and let the app call it.
-
-### Option C — Local
-Use `streamlit run ...` as shown above.
+## 🔧 Troubleshooting
+- **“Please upload a clickstream CSV file to begin.”** → No file was provided.
+- **Missing column** → Ensure `truncated_sequence` and SHAP columns exist; `Intent_type` is optional.
+- **Ollama error** → Start a local server: `ollama run mistral`. Check `http://localhost:11434` is reachable.
+- **No GIF on click** → Use *Separate Sessions* mode and click a **flow/link** (not only nodes).
 
 ---
 
-## 🧬 Requirements
-
-See [`requirements.txt`](requirements.txt).
-
-- Python ≥ 3.9 is recommended.
-- If you want clickable interactions inside Streamlit, install `streamlit-plotly-events` (optional; already included).
+## 🧪 Tips
+- Keep `Max Steps` small (e.g., 5–11) for a compact, readable Sankey.
+- The app **truncates at the first purchase** (5) by design to focus on pre‑purchase logic.
+- Adjust **SHAP ×** multiplier in the sidebar to accentuate link widths.
 
 ---
 
-## 📄 GitHub Pages
+## 🪪 License
+MIT (add your preferred license here).
 
-This repo includes a minimal **Docs site** under `docs/` for GitHub Pages. After pushing to GitHub:
-
-1. Go to **Settings → Pages**.
-2. **Build and deployment** → Source: **Deploy from a branch**.
-3. Branch: `main` (or `master`), Folder: `/docs`.
-4. Save. Your project page will be published at `https://<user>.github.io/<repo>/`.
-
-The site contains a short project overview and a link back to the repo. You can further customize `docs/index.md`.
+## 🙌 Contributing
+PRs welcome! Please open an issue for bugs/ideas and include a small CSV snippet to reproduce.
 
 ---
 
-## 🧪 Sample Data
-
-A minimal CSV is in `sample_data/sample.csv` to sanity-check rendering.
-
----
-
-## ❗ Troubleshooting
-
-- **No CSV / wrong columns**: The app will stop early and show a message.
-- **GIF not saved**: Check the output path in the app log (Windows paths supported).
-- **Ollama error**: Ensure `ollama serve` is available and your chosen model is pulled.
-- **Plotly click events**: Requires `streamlit-plotly-events`. If unavailable, the app still renders (without click capture).
-
----
-
-## 📚 Citation
-
-If you use this tool in research, please cite:
-> Y.-C. Wang, *SankeyX — Intent Dynamics: An Interactive Streamlit Visualization for Clickstream Prediction and Explainability*, 2025.  
-
----
-
-## 🛡️ License
-
-MIT — see [`LICENSE`](LICENSE).
-
----
-
-_Last updated: 2025-09-02_
-
-
----
-
-
-# 🧩 Modularization Guide
-
-This repository now includes a **modular package** `sankeyx/` alongside the original monolithic app.
-
-## Structure
-```text
-sankeyx-intent-dynamics/
-├─ app.py                         # NEW: modular Streamlit entry (falls back to legacy when needed)
-├─ SankeyX_with_intent_dynamics.py# legacy monolithic app (kept intact)
-├─ sankeyx/
-│  ├─ __init__.py
-│  ├─ config.py                   # global settings (strategy, inertia K, utility matrix, etc.)
-│  ├─ data_io.py                  # CSV load & schema validation
-│  ├─ intent.py                   # dynamic intent timeline logic (late/hys, bridge NA) — stub
-│  ├─ plot.py                     # plotly sankey construction — minimal demo
-│  ├─ gif.py                      # timeline GIF exporter (matplotlib + Pillow)
-│  └─ utils.py                    # helpers (e.g., parsing sequences)
-├─ sample_data/
-├─ docs/
-├─ requirements.txt
-└─ README.md
-```
-
-## Running (Modular app)
-```bash
-pip install -r requirements.txt
-streamlit run app.py
-```
-
-If the modular path hits an error (until you fully migrate logic), it will **automatically fall back** to the legacy app.
-
-## How to migrate the logic
-- Move your real rule-evaluation + hysteresis + bridge-NA code into `sankeyx/intent.py` (replace the current placeholder).
-- Refactor any inline CSV parsing/validation into `sankeyx/data_io.py`.
-- Extract your Plotly Sankey building code into `sankeyx/plot.py`. Keep signatures clean, e.g. `build_sankey(nodes, links)`.
-- Put GIF animation code into `sankeyx/gif.py`, wrapping it with a simple `export_timeline_gif(...)` API.
-- If you use LLM summaries, move that logic into `sankeyx/llm.py` (Ollama helper provided).
-- Keep Streamlit-specific UI in `app.py` (sidebar controls, file uploader, etc.).
-
-## Minimal API examples
-
-```python
-# intent.py
-timeline = compute_intent_timeline(sequence=[1,1,2,3,5], settings=DEFAULT_SETTINGS)
-
-# plot.py
-fig = build_sankey(nodes=["Intent","Click 1","Prediction","Utility"],
-                   links={"source":[0],"target":[1],"value":[42]})
-
-# gif.py
-export_timeline_gif(timeline, "out.gif", fps=6)
-```
-
-## Notes
-- `app.py` first tries the new modular flow on the uploaded CSV. If anything is missing, it will **gracefully fall back** to `SankeyX_with_intent_dynamics.py` so you never lose functionality.
-- You can gradually move pieces into modules without breaking the app.
-- Once migration is complete, you may remove the legacy file and the fallback branch.
-
-
----
-
-## 📚 API Reference (Auto-extracted)
-
-- `safe_eval()` → **other**
-- `call_ollama()` → **llm**
-- `extract_json_block()` → **data_io**
-- `render_paragraphs()` → **other**
-- `get_last_intent()` → **intent**
-- `node_label_with_id()` → **intent**
-- `sequence_to_text()` → **other**
-- `sort_shap_cols()` → **other**
-- `normalize_tokens()` → **other**
-- `check_intent1()` → **intent**
-- `check_intent2()` → **intent**
-- `check_intent3()` → **intent**
-- `check_intent4()` → **intent**
-- `check_intent5()` → **intent**
-- `check_intent6()` → **intent**
-- `eval_rules_on_prefix()` → **other**
-- `intent_timeline_for_trace()` → **intent**
-- `generate_intent_gif()` → **intent**
-- `ensure_node()` → **plot**
-- `left_node_name()` → **intent**
-- `resolve_clicked_session_idx()` → **intent**
-- `_to_int()` → **other**
+**Files included in this package**
+- `SankeyX_with_intent_dynamics.py` — Streamlit app
+- `README.md` — this file
+- `sankeyx_architecture.png` — high‑level architecture diagram
