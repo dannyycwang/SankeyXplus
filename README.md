@@ -1,4 +1,4 @@
-# SankeyX with Intent Dynamics
+# SankeyX with Dynamic States
 
 Interactive Streamlit app to visualize clickstream sequences as a **Sankey diagram** with **dynamic customer intent timelines**, **SHAP‑weighted flows**, outcome → **utility**, and optional **AI explanations** via a local Ollama LLM.
 
