@@ -5,6 +5,8 @@ Interactive Streamlit app to visualize clickstream sequences as a **Sankey diagr
 ![Architecture](SankeyX+.png)
 
 
+![Dynamic States Example](session_timeline_hysteresis.gif)
+
 ---
 
 ## ✨ Features
