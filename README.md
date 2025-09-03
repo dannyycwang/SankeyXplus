@@ -2,28 +2,8 @@
 
 Interactive Streamlit app to visualize clickstream sequences as a **Sankey diagram** with **dynamic customer intent timelines**, **SHAP‑weighted flows**, outcome → **utility**, and optional **AI explanations** via a local Ollama LLM.
 
-![Architecture](sankeyx_architecture.png)
+![Architecture](SankeyX+.png)
 
-``` mermaid
-flowchart LR
-  A[CSV Input<br/>truncated_sequence, SHAP_*, y_pred, purchase,<br/>Intent_type (optional)]
-  B[Streamlit UI<br/>N sessions, steps, colors,<br/>intent settings, LLM model]
-  C[Preprocessing<br/>parse → align SHAP → truncate at first purchase]
-  D[Intent Engine<br/>prefix rules + hysteresis (K) + NA bridging]
-  E[Sankey Builder<br/>per-session nodes/links + stage headers]
-  F[GIF Generator<br/>matplotlib timeline animation]
-  G[LLM via Ollama<br/>compact summary → JSON insights]
-  H[Output<br/>Plotly Sankey + GIF + AI tabs]
-
-  A --> C
-  B --> C
-  C --> D
-  C --> E
-  D --> E
-  E --> H
-  D --> F --> H
-  C --> G --> H
-```
 
 ---
 
