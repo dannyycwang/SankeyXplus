@@ -2,7 +2,7 @@
 
 Interactive Streamlit app to visualize clickstream sequences as a **Sankey diagram** with **dynamic customer intent timelines**, **SHAP‑weighted flows**, outcome → **utility**, and optional **AI explanations** via a local Ollama LLM.
 
-![Architecture](SankeyX+.png)
+![Architecture](toolarch.png)
 
 
 ![Dynamic States Example](session_timeline_hysteresis.gif)
